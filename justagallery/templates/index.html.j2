@@ -1,0 +1,10 @@
+<html>
+<body>
+<h1>Gallery Index</h1>
+<ul>
+	{% for category in categories %}
+	<li><a href="{{ category.slug }}/">{{ category.title }}</a></li>
+	{% endfor %}
+</ul>
+</body>
+</html>
