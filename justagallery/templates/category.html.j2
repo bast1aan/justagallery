@@ -1,0 +1,18 @@
+<html>
+<body>
+<h1>{{ category.title }}</h1>
+{% if parent_url %}
+	<a href="{{ parent_url }}">Go back to {{ category.parent.title }}</a>
+{% else %}
+	<a href="/">Go back to index</a>
+{% endif %}
+<ul>
+	{% for child_category in child_categories %}
+	<li><a href="{{ child_category.url }}">{{ child_category.title }}</a></li>
+	{% endfor %}
+	{% for image in images %}
+	<li><a href="">{{ image.title }}</a></li>
+	{% endfor %}
+</ul>
+</body>
+</html>
