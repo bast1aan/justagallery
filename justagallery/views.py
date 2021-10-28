@@ -12,29 +12,31 @@ def index(request: HttpRequest) -> HttpResponse:
 
 
 def category(request: HttpRequest, url) -> HttpResponse:
+	@dataclass
+	class Item:
+		url: str
+		title: str
+
 	url = url.strip('/')
 	category = domain.get_category_by_url(url)
 	if not category:
 		raise Http404('Category not found')
 	if category.parent:
-		parent_url = domain.get_url_by_category(category.parent)
+		parent = Item(url=domain.get_url_by_category(category.parent), title=category.parent.title)
 	else:
-		parent_url = ''
+		parent = Item(url='/', title='index')
 	child_categories = [
-		{
-			'url': domain.get_url_by_category(child_category),
-			'title': child_category.title
-		} for child_category in category.children.all()
+		Item(url=domain.get_url_by_category(child_category), title=child_category.title)
+			for child_category in category.children.all()
 	]
 	images = [
-		{
-			'title': image.title
-		} for image in category.images.all()
+		Item(url='', title=image.title)
+			for image in category.images.all()
 	]
 
 	template_vars = dict(
 		category=category,
-		parent_url=parent_url,
+		parent=parent,
 		child_categories=child_categories,
 		images=images,
 	)
