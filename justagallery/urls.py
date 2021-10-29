@@ -23,6 +23,7 @@ urlpatterns = [
 	path('', views.index, name='index'),
 	path('admin/', admin.site.urls),
 	re_path(r'^(.*)/$', views.category, name='category'),
+	re_path(r'^(.*)/(.*).html$', views.image, name='image'),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

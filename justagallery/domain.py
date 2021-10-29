@@ -23,3 +23,8 @@ def get_url_by_category(category: models.Category) -> str:
 		category = category.parent
 	url_parts.reverse()
 	return '/' + '/'.join(url_parts) + '/'
+
+
+def get_url_by_image(image: models.Image) -> str:
+	category_part = get_url_by_category(image.category)
+	return "{}{}.html".format(category_part, image.slug)

@@ -21,7 +21,7 @@ class ThumbnailFormat(models.Model):
 		return "{}x{}{}".format(
 			self.width,
 			self.height,
-			' (Cropped' if self.crop else ''
+			' (Cropped)' if self.crop else ''
 		)
 
 

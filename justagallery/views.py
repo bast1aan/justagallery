@@ -30,7 +30,7 @@ def category(request: HttpRequest, url) -> HttpResponse:
 			for child_category in category.children.all()
 	]
 	images = [
-		Item(url='', title=image.title)
+		Item(url=domain.get_url_by_image(image), title=image.title)
 			for image in category.images.all()
 	]
 
@@ -41,3 +41,14 @@ def category(request: HttpRequest, url) -> HttpResponse:
 		images=images,
 	)
 	return render(request, 'category.html.j2', template_vars, using='jinja2')
+
+
+def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpResponse:
+	category = domain.get_category_by_url(category_slug.strip('/'))
+	if not category:
+		raise Http404('Category not found')
+	try:
+		image = models.Image.objects.get(category=category, slug=image_slug)
+	except models.Image.DoesNotExist:
+		raise Http404('Image not found')
+	return render(request, 'image.html.j2', dict(image=image), using='jinja2')
