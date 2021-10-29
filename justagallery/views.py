@@ -5,6 +5,7 @@ from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.static import serve
 
+from justagallery.domain.category import get_display_formats
 from .domain.image import create_thumbnail, Size
 from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category
@@ -67,5 +68,18 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 			image = models.Image.objects.get(category_id=int(category_id), slug=image_slug)
 		except models.Image.DoesNotExist:
 			raise Http404('Image not found')
-		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, Size(*(int(s) for s in size.split('x'))))
+		if size.endswith('-c'):
+			crop = True
+			size = size[:-2]
+		else:
+			crop = False
+		try:
+			size = Size(*(int(s) for s in size.split('x')))
+			assert size.x > 0 and size.y > 0
+		except Exception:
+			raise Http404('Unknown size')
+		display_formats = get_display_formats(image)
+		if (size.x, size.y, crop) not in [(dp.width, dp.height, dp.crop) for dp in display_formats]:
+			raise Http404('Unknown size')
+		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, size)
 		return static_serve()
