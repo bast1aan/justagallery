@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 
+from django.conf import settings
 from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
+from django.views.static import serve
 
+from .domain.image import create_thumbnail, Size
 from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category
 
@@ -52,3 +55,17 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 	except models.Image.DoesNotExist:
 		raise Http404('Image not found')
 	return render(request, 'image.html.j2', dict(image=image), using='jinja2')
+
+
+def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpResponse:
+	path = "{}/{}/{}".format(category_id, size, image_slug)
+	static_serve = lambda: serve(request, path, document_root=settings.THUMBNAILS_ROOT)
+	try:
+		return static_serve()
+	except Http404:
+		try:
+			image = models.Image.objects.get(category_id=int(category_id), slug=image_slug)
+		except models.Image.DoesNotExist:
+			raise Http404('Image not found')
+		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, Size(*(int(s) for s in size.split('x'))))
+		return static_serve()

@@ -130,6 +130,8 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 
 MEDIA_ROOT = BASE_DIR / 'uploads'
 
+THUMBNAILS_ROOT = BASE_DIR / 'thumbnails'
+
 MEDIA_URL = '/uploads/'
 
 FILE_UPLOAD_HANDLERS = ['django.core.files.uploadhandler.TemporaryFileUploadHandler']
