@@ -2,6 +2,10 @@ from datetime import datetime
 
 from django.db import models
 
+def upload_to(instance: models.Model, filename: str) -> str:
+	if isinstance(instance, Image):
+		return "{}/{}".format(instance.category.id, filename)
+	return filename
 
 class Category(models.Model):
 	id = models.AutoField(primary_key=True)
@@ -30,7 +34,7 @@ class Image(models.Model):
 	category = models.ForeignKey(Category, on_delete=models.RESTRICT, related_name='images')
 	title = models.CharField(max_length=255)
 	slug = models.CharField(max_length=255)
-	file = models.FileField()
+	file = models.FileField(upload_to=upload_to)
 	description = models.TextField()
 	created_at = models.DateTimeField(default=datetime.now)
 	updated_at = models.DateTimeField(default=datetime.now)
