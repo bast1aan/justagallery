@@ -4,7 +4,7 @@ from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
 
 from . import models
-from . import domain
+from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category
 
 def index(request: HttpRequest) -> HttpResponse:
 	categories = models.Category.objects.filter(parent=None).order_by('-created_at').all()
@@ -18,19 +18,19 @@ def category(request: HttpRequest, url) -> HttpResponse:
 		title: str
 
 	url = url.strip('/')
-	category = domain.get_category_by_url(url)
+	category = get_category_by_url(url)
 	if not category:
 		raise Http404('Category not found')
 	if category.parent:
-		parent = Item(url=domain.get_url_by_category(category.parent), title=category.parent.title)
+		parent = Item(url=get_url_by_category(category.parent), title=category.parent.title)
 	else:
 		parent = Item(url='/', title='index')
 	child_categories = [
-		Item(url=domain.get_url_by_category(child_category), title=child_category.title)
+		Item(url=get_url_by_category(child_category), title=child_category.title)
 			for child_category in category.children.all()
 	]
 	images = [
-		Item(url=domain.get_url_by_image(image), title=image.title)
+		Item(url=get_url_by_image(image), title=image.title)
 			for image in category.images.all()
 	]
 
@@ -44,7 +44,7 @@ def category(request: HttpRequest, url) -> HttpResponse:
 
 
 def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpResponse:
-	category = domain.get_category_by_url(category_slug.strip('/'))
+	category = get_category_by_url(category_slug.strip('/'))
 	if not category:
 		raise Http404('Category not found')
 	try:

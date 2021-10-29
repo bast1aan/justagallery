@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from . import models
+from .. import models
 
 _URLS_TO_CATEGORY: Dict[str, models.Category] = {}
 
