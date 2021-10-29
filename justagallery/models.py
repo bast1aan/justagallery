@@ -7,6 +7,24 @@ def upload_to(instance: models.Model, filename: str) -> str:
 		return "{}/{}".format(instance.category.id, filename)
 	return filename
 
+
+class ThumbnailFormat(models.Model):
+	id = models.AutoField(primary_key=True)
+	width = models.IntegerField()
+	height = models.IntegerField()
+	crop = models.BooleanField(default=False)
+
+	class Meta:
+		db_table = 'thumbnail_formats'
+
+	def __str__(self):
+		return "{}x{}{}".format(
+			self.width,
+			self.height,
+			' (Cropped' if self.crop else ''
+		)
+
+
 class Category(models.Model):
 	id = models.AutoField(primary_key=True)
 	parent = models.ForeignKey('self', on_delete=models.RESTRICT, related_name='children', blank=True, null=True)
@@ -15,6 +33,9 @@ class Category(models.Model):
 	description = models.TextField()
 	created_at = models.DateTimeField(default=datetime.now)
 	updated_at = models.DateTimeField(default=datetime.now)
+	default_thumbnail_format = models.ForeignKey(ThumbnailFormat, on_delete=models.RESTRICT,
+		related_name='default_for_categories', blank=True, null=True)
+	thumbnail_formats = models.ManyToManyField(ThumbnailFormat, related_name='categories')
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
