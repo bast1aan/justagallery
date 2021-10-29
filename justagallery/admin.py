@@ -7,16 +7,17 @@ class ThumbnailFormatAdmin(admin.ModelAdmin):
 	model = models.ThumbnailFormat
 	list_display = ('width', 'height', 'crop')
 	fields = ('width', 'height', 'crop')
+	ordering = ('width', 'height', 'crop')
 
 class CategoryAdmin(admin.ModelAdmin):
 	model = models.Category
-	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'thumbnail_formats']
+	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats']
 	list_display = ('parent', 'title', 'slug', 'created_at', 'updated_at')
 	ordering = ('-parent', '-created_at', )
 
 class ImageAdmin(admin.ModelAdmin):
 	model = models.Image
-	fields = ['category', 'title', 'description', 'slug', 'file']
+	fields = ['category', 'title', 'description', 'slug', 'file', 'display_formats']
 	list_display = ('category', 'title', 'slug', 'created_at', 'updated_at')
 	ordering = ('-category', '-created_at', )
 

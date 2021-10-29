@@ -35,7 +35,7 @@ class Category(models.Model):
 	updated_at = models.DateTimeField(default=datetime.now)
 	default_thumbnail_format = models.ForeignKey(ThumbnailFormat, on_delete=models.RESTRICT,
 		related_name='default_for_categories', blank=True, null=True)
-	thumbnail_formats = models.ManyToManyField(ThumbnailFormat, related_name='categories')
+	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='categories')
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
@@ -59,6 +59,7 @@ class Image(models.Model):
 	description = models.TextField()
 	created_at = models.DateTimeField(default=datetime.now)
 	updated_at = models.DateTimeField(default=datetime.now)
+	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='images')
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
