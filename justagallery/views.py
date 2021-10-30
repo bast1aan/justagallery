@@ -5,7 +5,7 @@ from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.static import serve
 
-from justagallery.domain.category import get_display_formats
+from justagallery.domain.category import get_display_formats, get_default_thumbnail_format
 from .domain.image import create_thumbnail, Size
 from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url
@@ -21,21 +21,24 @@ def category(request: HttpRequest, url) -> HttpResponse:
 	class Item:
 		url: str
 		title: str
+		thumbnail_url: str
 
 	url = url.strip('/')
 	category = get_category_by_url(url)
 	if not category:
 		raise Http404('Category not found')
 	if category.parent:
-		parent = Item(url=get_url_by_category(category.parent), title=category.parent.title)
+		parent = Item(url=get_url_by_category(category.parent), title=category.parent.title, thumbnail_url='')
 	else:
-		parent = Item(url='/', title='index')
+		parent = Item(url='/', title='index', thumbnail_url='')
 	child_categories = [
-		Item(url=get_url_by_category(child_category), title=child_category.title)
+		Item(url=get_url_by_category(child_category), title=child_category.title,
+				thumbnail_url=get_thumbnail_url(child_category.images.first(), get_default_thumbnail_format(child_category)))
 			for child_category in category.children.all()
 	]
 	images = [
-		Item(url=get_url_by_image(image), title=image.title)
+		Item(url=get_url_by_image(image), title=image.title,
+				thumbnail_url=get_thumbnail_url(image, get_default_thumbnail_format(category)))
 			for image in category.images.all()
 	]
 
@@ -66,7 +69,9 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 	} for df in display_formats]
 	thumbnails.sort(key=lambda dct: (dct['width'], dct['height'], dct['crop']))
 
-	return render(request, 'image.html.j2', dict(image=image, thumbnails=thumbnails), using='jinja2')
+	category_url = get_url_by_category(category)
+
+	return render(request, 'image.html.j2', dict(image=image, thumbnails=thumbnails, category_url=category_url), using='jinja2')
 
 
 def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpResponse:

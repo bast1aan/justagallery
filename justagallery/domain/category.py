@@ -15,3 +15,11 @@ def get_display_formats(model: Model) -> [models.ThumbnailFormat]:
 			if len(display_formats) > 0:
 				return display_formats
 			model = model.parent
+
+def get_default_thumbnail_format(category: models.Category) -> models.ThumbnailFormat:
+	""" Retrieve default thumbnail format recursivly to the root category. """
+	while category:
+		default_thumbnail_format: models.ThumbnailFormat = category.default_thumbnail_format
+		if default_thumbnail_format:
+			return default_thumbnail_format
+		category = category.parent

@@ -1,6 +1,7 @@
 <html>
 <body>
 <h1>{{ image.title }}</h1>
+	<div><a href="{{ category_url }}">Go back to category</a></div>
 	{% if thumbnails|length > 1 %}<a href="{{ thumbnails[1].image_url }}">{% endif %}
 	<img src="{{ thumbnails[0].thumbnail_url }}" alt="{{ image.title }}" />
 	{% if thumbnails|length > 1 %}</a>{% endif %}
