@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from .. import models
 
@@ -25,19 +25,38 @@ def get_url_by_category(category: models.Category) -> str:
 	return '/' + '/'.join(url_parts) + '/'
 
 
-def get_url_by_image(image: models.Image) -> str:
+def get_url_by_image(image: models.Image, format: models.ThumbnailFormat = None) -> str:
 	category_part = get_url_by_category(image.category)
-	return "{}{}.html".format(category_part, image.slug)
+	url = "{}{}.html".format(category_part, image.slug)
+	if format:
+		url += '?format={}'.format(_get_size(format))
+	return url
 
 
 def get_thumbnail_url(image: models.Image, thumbnail_format: models.ThumbnailFormat) -> str:
-	size = "{}x{}{}".format(
-		thumbnail_format.width,
-		thumbnail_format.height,
-		"-c" if thumbnail_format.crop else ""
-	)
 	return "/thumbnails/{}/{}/{}".format(
 		image.category_id,
-		size,
+		_get_size(thumbnail_format),
 		image.slug
 	)
+
+def _get_size(format: models.ThumbnailFormat) -> str:
+	return "{}x{}{}".format(
+		format.width,
+		format.height,
+		"-c" if format.crop else ""
+	)
+
+def get_size_from_str(size: str) -> Tuple[int, int, bool]:
+	"""
+		:raises ValueError if format or sizes are wrong
+	"""
+	if size.endswith('-c'):
+		crop = True
+		size = size[:-2]
+	else:
+		crop = False
+	width, height = (int(s) for s in size.split('x'))
+	if width < 1 or height < 1:
+		raise ValueError('width and height should be greater than or equals to 1')
+	return width, height, crop

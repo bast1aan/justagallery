@@ -8,7 +8,7 @@ from django.views.static import serve
 from justagallery.domain.category import get_display_formats, get_default_thumbnail_format
 from .domain.image import create_thumbnail, Size
 from . import models
-from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url
+from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url, get_size_from_str
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -52,6 +52,7 @@ def category(request: HttpRequest, url) -> HttpResponse:
 
 
 def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpResponse:
+	format: str = request.GET.get('format', None)
 	category = get_category_by_url(category_slug.strip('/'))
 	if not category:
 		raise Http404('Category not found')
@@ -65,13 +66,33 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 		'height': df.height,
 		'crop': df.crop,
 		'thumbnail_url': get_thumbnail_url(image, df),
-		'image_url': get_thumbnail_url(image, df),  # todo: implement sizes in this page
+		'image_url': get_url_by_image(image, df),
 	} for df in display_formats]
 	thumbnails.sort(key=lambda dct: (dct['width'], dct['height'], dct['crop']))
 
+	# use parameter-less URL for default (1st) format
+	thumbnails[0]['image_url'] = get_url_by_image(image)
+
 	category_url = get_url_by_category(category)
 
-	return render(request, 'image.html.j2', dict(image=image, thumbnails=thumbnails, category_url=category_url), using='jinja2')
+	current_thumbnail_idx = 0
+	if format:
+		try:
+			x, y, crop = get_size_from_str(format)
+			for i, thumbnail in enumerate(thumbnails):
+				if (x, y, crop) == (thumbnail['width'], thumbnail['height'], thumbnail['crop']):
+					current_thumbnail_idx = i
+					break
+		except ValueError:
+			pass
+
+	template_vars = dict(
+		image=image,
+		thumbnails=thumbnails,
+		category_url=category_url,
+		current_thumbnail_idx=current_thumbnail_idx
+	)
+	return render(request, 'image.html.j2', template_vars, using='jinja2')
 
 
 def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpResponse:
@@ -84,16 +105,11 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 			image = models.Image.objects.get(category_id=int(category_id), slug=image_slug)
 		except models.Image.DoesNotExist:
 			raise Http404('Image not found')
-		if size.endswith('-c'):
-			crop = True
-			size = size[:-2]
-		else:
-			crop = False
 		try:
-			size = Size(*(int(s) for s in size.split('x')))
-			assert size.x > 0 and size.y > 0
-		except Exception:
-			raise Http404('Unknown size')
+			x, y, crop = get_size_from_str(size)
+		except ValueError:
+			raise Http404('Wrong size')
+		size = Size(x, y)
 		display_formats = get_display_formats(image)
 		if (size.x, size.y, crop) not in [(dp.width, dp.height, dp.crop) for dp in display_formats]:
 			raise Http404('Unknown size')
