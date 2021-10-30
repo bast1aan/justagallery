@@ -12,13 +12,13 @@ class ThumbnailFormatAdmin(admin.ModelAdmin):
 class CategoryAdmin(admin.ModelAdmin):
 	model = models.Category
 	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats']
-	list_display = ('parent', 'title', 'slug', 'created_at', 'updated_at')
+	list_display = ('title', 'parent', 'slug', 'created_at', 'updated_at')
 	ordering = ('-parent', '-created_at', )
 
 class ImageAdmin(admin.ModelAdmin):
 	model = models.Image
 	fields = ['category', 'title', 'description', 'file', 'display_formats']
-	list_display = ('category', 'title', 'created_at', 'updated_at')
+	list_display = ('title', 'category', 'created_at', 'updated_at')
 	ordering = ('-category', '-created_at', )
 
 admin.site.register(models.ThumbnailFormat, ThumbnailFormatAdmin)
