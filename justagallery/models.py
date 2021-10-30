@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from django.db import models
@@ -63,6 +64,9 @@ class Image(models.Model):
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
+		# upload file now, to get the definitive unique file name, necessary for the slug
+		self._meta.get_field('file').pre_save(self, None)
+		self.slug = os.path.basename(self.file.path)
 		super().save(force_insert, force_update, using, update_fields)
 
 	def __str__(self):

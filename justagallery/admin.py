@@ -17,8 +17,8 @@ class CategoryAdmin(admin.ModelAdmin):
 
 class ImageAdmin(admin.ModelAdmin):
 	model = models.Image
-	fields = ['category', 'title', 'description', 'slug', 'file', 'display_formats']
-	list_display = ('category', 'title', 'slug', 'created_at', 'updated_at')
+	fields = ['category', 'title', 'description', 'file', 'display_formats']
+	list_display = ('category', 'title', 'created_at', 'updated_at')
 	ordering = ('-category', '-created_at', )
 
 admin.site.register(models.ThumbnailFormat, ThumbnailFormatAdmin)
