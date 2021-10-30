@@ -54,10 +54,10 @@ class Category(models.Model):
 class Image(models.Model):
 	id = models.AutoField(primary_key=True)
 	category = models.ForeignKey(Category, on_delete=models.RESTRICT, related_name='images')
-	title = models.CharField(max_length=255)
+	title = models.CharField(max_length=255, blank=True)
 	slug = models.CharField(max_length=255)
 	file = models.FileField(upload_to=upload_to)
-	description = models.TextField()
+	description = models.TextField(blank=True)
 	created_at = models.DateTimeField(default=datetime.now)
 	updated_at = models.DateTimeField(default=datetime.now)
 	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='images', blank=True)
@@ -67,6 +67,13 @@ class Image(models.Model):
 		# upload file now, to get the definitive unique file name, necessary for the slug
 		self._meta.get_field('file').pre_save(self, None)
 		self.slug = os.path.basename(self.file.path)
+		if not self.id: # on creation
+			if not self.title:
+				# derive title from slug (filename)
+				self.title, _ = os.path.splitext(self.slug)
+			if not self.description:
+				# derive description from title
+				self.description = self.title
 		super().save(force_insert, force_update, using, update_fields)
 
 	def __str__(self):
