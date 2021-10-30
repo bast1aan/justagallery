@@ -1,7 +1,10 @@
 import os
+import logging
 from datetime import datetime
 
 from django.db import models
+
+logger = logging.getLogger(__name__)
 
 def upload_to(instance: models.Model, filename: str) -> str:
 	if isinstance(instance, Image):
@@ -78,6 +81,18 @@ class Image(models.Model):
 
 	def __str__(self):
 		return self.title
+
+	def delete(self, using=None, keep_parents=False):
+		# Remove file on deletion of record.
+		# This could be implemented much better using the storage backend delete,
+		# signalling, using transactions, and what more. For now, this is Good Enough.
+		path = self.file.path
+		ret = super().delete(using, keep_parents)
+		try:
+			os.unlink(path)
+		except Exception as e:
+			logger.warning('Cannot remove file {}: {}'.format(path, e))
+		return ret
 
 	class Meta:
 		indexes = [models.Index(fields=['slug']), models.Index(fields=['created_at'])]
