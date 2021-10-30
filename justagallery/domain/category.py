@@ -1,8 +1,10 @@
+from typing import Iterator
+
 from django.db.models import Model
 from justagallery import models
 
 
-def get_display_formats(model: Model) -> [models.ThumbnailFormat]:
+def get_display_formats(model: Model) -> Iterator[models.ThumbnailFormat]:
 	""" Retrieve display formats recursivly to the root category. """
 	if isinstance(model, models.Image):
 		display_formats: [models.ThumbnailFormat] = model.display_formats.all()
