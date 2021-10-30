@@ -1,7 +1,18 @@
 <html>
 <body>
 <h1>{{ image.title }}</h1>
-	<a href="">{{ image.file.url }}</a>
+	{% if thumbnails|length > 1 %}<a href="{{ thumbnails[1].image_url }}">{% endif %}
+	<img src="{{ thumbnails[0].thumbnail_url }}" alt="{{ image.title }}" />
+	{% if thumbnails|length > 1 %}</a>{% endif %}
+	<p>
+	{% for thumbnail in thumbnails %}
+		{% if thumbnail == thumbnails[0] %}
+		<strong>{{ thumbnail.width }}x{{ thumbnail.height }}{{ ' (Cropped)' if thumbnail.crop else '' }}</strong>
+		{%  else %}
+		<a href="{{ thumbnail.image_url }}">{{ thumbnail.width }}x{{ thumbnail.height }}{{ ' (Cropped)' if thumbnail.crop else '' }}</a>
+		{% endif %}
+	{% endfor %}
+	</p>
 	<p>{{ image.description }}</p>
 </body>
 </html>

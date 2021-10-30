@@ -8,7 +8,8 @@ from django.views.static import serve
 from justagallery.domain.category import get_display_formats
 from .domain.image import create_thumbnail, Size
 from . import models
-from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category
+from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url
+
 
 def index(request: HttpRequest) -> HttpResponse:
 	categories = models.Category.objects.filter(parent=None).order_by('-created_at').all()
@@ -55,7 +56,17 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 		image = models.Image.objects.get(category=category, slug=image_slug)
 	except models.Image.DoesNotExist:
 		raise Http404('Image not found')
-	return render(request, 'image.html.j2', dict(image=image), using='jinja2')
+	display_formats = get_display_formats(image)
+	thumbnails = [{
+		'width': df.width,
+		'height': df.height,
+		'crop': df.crop,
+		'thumbnail_url': get_thumbnail_url(image, df),
+		'image_url': get_thumbnail_url(image, df),  # todo: implement sizes in this page
+	} for df in display_formats]
+	thumbnails.sort(key=lambda dct: (dct['width'], dct['height'], dct['crop']))
+
+	return render(request, 'image.html.j2', dict(image=image, thumbnails=thumbnails), using='jinja2')
 
 
 def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpResponse:

@@ -28,3 +28,16 @@ def get_url_by_category(category: models.Category) -> str:
 def get_url_by_image(image: models.Image) -> str:
 	category_part = get_url_by_category(image.category)
 	return "{}{}.html".format(category_part, image.slug)
+
+
+def get_thumbnail_url(image: models.Image, thumbnail_format: models.ThumbnailFormat) -> str:
+	size = "{}x{}{}".format(
+		thumbnail_format.width,
+		thumbnail_format.height,
+		"-c" if thumbnail_format.crop else ""
+	)
+	return "/thumbnails/{}/{}/{}".format(
+		image.category_id,
+		size,
+		image.slug
+	)
