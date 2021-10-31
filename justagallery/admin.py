@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.admin import FieldListFilter, RelatedFieldListFilter
 from django.contrib.auth.models import User
 from django.db.models import QuerySet, Model
+from django import forms
 
 from . import models
 
@@ -59,19 +60,42 @@ class _OwnerMixin(admin.ModelAdmin):
 		return formfield
 
 
+class CategoryForm(forms.ModelForm):
+	instance: models.Category
+	images = forms.FileField(
+		widget=forms.ClearableFileInput(attrs={"multiple": True}),
+		label="Add images",
+		required=False,
+	)
+
+	def save_images(self, request: HasUser, category: models.Category):
+		"""Process each uploaded image."""
+		for upload in self.files.getlist("images"):
+			image = models.Image(category=category, file=upload, owner=request.user)
+			image.save()
+
+
+
 class ThumbnailFormatAdmin(admin.ModelAdmin):
 	model = models.ThumbnailFormat
 	list_display = ('width', 'height', 'crop')
 	fields = ('width', 'height', 'crop')
 	ordering = ('width', 'height', 'crop')
 
+
 class CategoryAdmin(_OwnerMixin, admin.ModelAdmin):
 	model = models.Category
-	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats', 'owner']
+	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats', 'owner', 'images']
 	list_display = ('title', 'parent', 'slug', 'created_at', 'updated_at')
 	ordering = ('-parent', '-created_at', )
 	list_filter = ('parent',)
 	search_fields = ('title',)
+	form = CategoryForm
+
+	def save_related(self, request, form: CategoryForm, formsets, change):
+		super().save_related(request, form, formsets, change)
+		form.save_images(request, form.instance)
+
 
 class ImageAdmin(_OwnerMixin, admin.ModelAdmin):
 	model = models.Image
@@ -80,6 +104,7 @@ class ImageAdmin(_OwnerMixin, admin.ModelAdmin):
 	ordering = ('-category', '-created_at', )
 	list_filter = ('category',)
 	search_fields = ('title',)
+
 
 admin.site.register(models.ThumbnailFormat, ThumbnailFormatAdmin)
 admin.site.register(models.Category, CategoryAdmin)
