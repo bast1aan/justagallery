@@ -1,14 +1,20 @@
+from typing import Protocol
+
 from django.contrib import admin
 from django.contrib.admin import FieldListFilter, RelatedFieldListFilter
+from django.contrib.auth.models import User
 from django.db.models import QuerySet, Model
-from django.http import HttpRequest
 
 from . import models
 
 
+class HasUser(Protocol):
+	user: User
+
+
 class _OwnerListFilter(RelatedFieldListFilter):
 	""" Related field list filter that only shows choices that user owns """
-	def field_choices(self, field, request, model_admin):
+	def field_choices(self, field, request: HasUser, model_admin):
 		if not request.user.is_superuser:
 			ordering = self.field_admin_ordering(field, request, model_admin)
 			return field.get_choices(include_blank=False, ordering=ordering, limit_choices_to={'owner': request.user})
@@ -22,20 +28,20 @@ FieldListFilter.register(lambda f: f.remote_field and hasattr(f.related_model, '
 class _OwnerMixin(admin.ModelAdmin):
 	""" Extension to make admin use only objects that are owned by the logged in user """
 	model: Model
-	def get_queryset(self, request: HttpRequest):
+	def get_queryset(self, request: HasUser):
 		""" Filter on objects for current user """
 		qs: QuerySet = super().get_queryset(request)
 		if not request.user.is_superuser and hasattr(qs.model, 'owner'):
 			qs = qs.filter(owner=request.user)
 		return qs
 
-	def save_model(self, request, obj, form, change):
+	def save_model(self, request: HasUser, obj, form, change):
 		""" Set owner to current user """
 		if not obj.id and hasattr(obj, 'owner') and not request.user.is_superuser:
 			obj.owner = request.user
 		return super().save_model(request, obj, form, change)
 
-	def formfield_for_foreignkey(self, db_field, request, **kwargs):
+	def formfield_for_foreignkey(self, db_field, request: HasUser, **kwargs):
 		""" Only relate to objects that user owns """
 		if hasattr(db_field.related_model, 'owner'):
 			if not request.user.is_superuser:
