@@ -1,8 +1,23 @@
 from django.contrib import admin
+from django.contrib.admin import FieldListFilter, RelatedFieldListFilter
 from django.db.models import QuerySet, Model
 from django.http import HttpRequest
 
 from . import models
+
+
+class _OwnerListFilter(RelatedFieldListFilter):
+	""" Related field list filter that only shows choices that user owns """
+	def field_choices(self, field, request, model_admin):
+		if not request.user.is_superuser:
+			ordering = self.field_admin_ordering(field, request, model_admin)
+			return field.get_choices(include_blank=False, ordering=ordering, limit_choices_to={'owner': request.user})
+		else:
+			return super().field_choices(field, request, model_admin)
+
+FieldListFilter.register(lambda f: f.remote_field and hasattr(f.related_model, 'owner'), _OwnerListFilter,
+	take_priority=True)
+
 
 class _OwnerMixin(admin.ModelAdmin):
 	""" Extension to make admin use only objects that are owned by the logged in user """
@@ -36,6 +51,7 @@ class _OwnerMixin(admin.ModelAdmin):
 				formfield.initial = request.user.pk
 			formfield.required = True  # Owner is required
 		return formfield
+
 
 class ThumbnailFormatAdmin(admin.ModelAdmin):
 	model = models.ThumbnailFormat
