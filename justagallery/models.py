@@ -2,6 +2,7 @@ import os
 import logging
 from datetime import datetime
 
+from django.contrib.auth.models import User
 from django.db import models
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class Category(models.Model):
 	default_thumbnail_format = models.ForeignKey(ThumbnailFormat, on_delete=models.RESTRICT,
 		related_name='default_for_categories', blank=True, null=True)
 	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='categories', blank=True)
+	owner = models.ForeignKey(User, on_delete=models.RESTRICT, blank=True, null=True)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
@@ -64,6 +66,7 @@ class Image(models.Model):
 	created_at = models.DateTimeField(default=datetime.now)
 	updated_at = models.DateTimeField(default=datetime.now)
 	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='images', blank=True)
+	owner = models.ForeignKey(User, on_delete=models.RESTRICT, blank=True, null=True)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
