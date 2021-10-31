@@ -1,7 +1,57 @@
 from django.contrib import admin
-from django.core.exceptions import ValidationError
+from django.contrib.admin import FieldListFilter, RelatedFieldListFilter
+from django.db.models import QuerySet, Model
+from django.http import HttpRequest
 
 from . import models
+
+
+class _OwnerListFilter(RelatedFieldListFilter):
+	""" Related field list filter that only shows choices that user owns """
+	def field_choices(self, field, request, model_admin):
+		if not request.user.is_superuser:
+			ordering = self.field_admin_ordering(field, request, model_admin)
+			return field.get_choices(include_blank=False, ordering=ordering, limit_choices_to={'owner': request.user})
+		else:
+			return super().field_choices(field, request, model_admin)
+
+FieldListFilter.register(lambda f: f.remote_field and hasattr(f.related_model, 'owner'), _OwnerListFilter,
+	take_priority=True)
+
+
+class _OwnerMixin(admin.ModelAdmin):
+	""" Extension to make admin use only objects that are owned by the logged in user """
+	model: Model
+	def get_queryset(self, request: HttpRequest):
+		""" Filter on objects for current user """
+		qs: QuerySet = super().get_queryset(request)
+		if not request.user.is_superuser and hasattr(qs.model, 'owner'):
+			qs = qs.filter(owner=request.user)
+		return qs
+
+	def save_model(self, request, obj, form, change):
+		""" Set owner to current user """
+		if not obj.id and hasattr(obj, 'owner') and not request.user.is_superuser:
+			obj.owner = request.user
+		return super().save_model(request, obj, form, change)
+
+	def formfield_for_foreignkey(self, db_field, request, **kwargs):
+		""" Only relate to objects that user owns """
+		if hasattr(db_field.related_model, 'owner'):
+			if not request.user.is_superuser:
+				# Only show objects that user owns
+				kwargs['queryset'] = db_field.related_model.objects.filter(owner=request.user)
+		formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
+		if db_field.name == 'owner':
+			if not request.user.is_superuser:
+				# Only show current user to choose as owner
+				formfield.queryset = formfield.queryset.filter(pk=request.user.pk)
+			if not formfield.initial:
+				# Set initial value to current user
+				formfield.initial = request.user.pk
+			formfield.required = True  # Owner is required
+		return formfield
+
 
 class ThumbnailFormatAdmin(admin.ModelAdmin):
 	model = models.ThumbnailFormat
@@ -9,17 +59,17 @@ class ThumbnailFormatAdmin(admin.ModelAdmin):
 	fields = ('width', 'height', 'crop')
 	ordering = ('width', 'height', 'crop')
 
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(_OwnerMixin, admin.ModelAdmin):
 	model = models.Category
-	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats']
+	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats', 'owner']
 	list_display = ('title', 'parent', 'slug', 'created_at', 'updated_at')
 	ordering = ('-parent', '-created_at', )
 	list_filter = ('parent',)
 	search_fields = ('title',)
 
-class ImageAdmin(admin.ModelAdmin):
+class ImageAdmin(_OwnerMixin, admin.ModelAdmin):
 	model = models.Image
-	fields = ['category', 'title', 'description', 'file', 'display_formats']
+	fields = ['category', 'title', 'description', 'file', 'display_formats', 'owner']
 	list_display = ('title', 'category', 'created_at', 'updated_at')
 	ordering = ('-category', '-created_at', )
 	list_filter = ('category',)
