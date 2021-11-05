@@ -1,3 +1,4 @@
+from itertools import chain
 from dataclasses import dataclass
 
 from django.conf import settings
@@ -113,7 +114,7 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 		except ValueError:
 			raise Http404('Wrong size')
 		size = Size(x, y)
-		formats = list(get_display_formats(image)) + list(get_default_thumbnail_formats(image.category))
+		formats = chain(get_display_formats(image), get_default_thumbnail_formats(image.category))
 		if (size.x, size.y, crop) not in [(dp.width, dp.height, dp.crop) for dp in formats]:
 			raise Http404('Unknown size')
 		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, size, crop)
