@@ -5,7 +5,8 @@ from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.static import serve
 
-from justagallery.domain.category import get_display_formats, get_default_thumbnail_format
+from justagallery.domain.category import get_display_formats, get_default_thumbnail_format, \
+	get_default_thumbnail_formats
 from .domain.image import create_thumbnail, Size
 from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url, get_size_from_str
@@ -31,15 +32,16 @@ def category(request: HttpRequest, url) -> HttpResponse:
 		parent = Item(url=get_url_by_category(category.parent), title=category.parent.title, thumbnail_url='')
 	else:
 		parent = Item(url='/', title='index', thumbnail_url='')
+	default_thumbnail_format = get_default_thumbnail_format(category)
 	child_categories = [
 		Item(url=get_url_by_category(child_category), title=child_category.title,
-				thumbnail_url=get_thumbnail_url(child_category.images.first(), get_default_thumbnail_format(child_category))
+				thumbnail_url=get_thumbnail_url(child_category.images.first(), default_thumbnail_format)
 					if child_category.images.count() > 0 else '')
 			for child_category in category.children.all()
 	]
 	images = [
 		Item(url=get_url_by_image(image), title=image.title,
-				thumbnail_url=get_thumbnail_url(image, get_default_thumbnail_format(category)))
+				thumbnail_url=get_thumbnail_url(image, default_thumbnail_format))
 			for image in category.images.all()
 	]
 
@@ -111,7 +113,7 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 		except ValueError:
 			raise Http404('Wrong size')
 		size = Size(x, y)
-		formats = list(get_display_formats(image)) + [get_default_thumbnail_format(image.category)]
+		formats = list(get_display_formats(image)) + list(get_default_thumbnail_formats(image.category))
 		if (size.x, size.y, crop) not in [(dp.width, dp.height, dp.crop) for dp in formats]:
 			raise Http404('Unknown size')
 		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, size, crop)
