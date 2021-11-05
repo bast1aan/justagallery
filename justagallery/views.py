@@ -42,6 +42,7 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 		url: str
 		title: str
 		thumbnail_url: str
+		views: int
 
 	url = url.strip('/')
 	category = get_category_by_url(url)
@@ -55,18 +56,18 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 	if not category:
 		raise Http404('Category not found')
 	if category.parent:
-		parent = Item(url=get_url_by_category(category.parent), title=category.parent.title, thumbnail_url='')
+		parent = Item(url=get_url_by_category(category.parent), title=category.parent.title, thumbnail_url='', views=0)
 	else:
-		parent = Item(url='/', title='index', thumbnail_url='')
+		parent = Item(url='/', title='index', thumbnail_url='', views=0)
 	default_thumbnail_format = get_default_thumbnail_format(category)
 	child_categories = [
-		Item(url=get_url_by_category(child_category), title=child_category.title,
+		Item(url=get_url_by_category(child_category), title=child_category.title, views=child_category.views,
 				thumbnail_url=get_thumbnail_url(child_category.images.first(), default_thumbnail_format)
 					if child_category.images.count() > 0 else '')
 			for child_category in category.children.all()
 	]
 	images = [
-		Item(url=get_url_by_image(image), title=image.title,
+		Item(url=get_url_by_image(image), title=image.title, views=image.views,
 				thumbnail_url=get_thumbnail_url(image, default_thumbnail_format))
 			for image in category.images.all()
 	]

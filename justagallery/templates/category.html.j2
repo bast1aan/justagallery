@@ -2,12 +2,15 @@
 <body>
 <h1>{{ category.title }}</h1>
 	<a href="{{ parent.url }}">Go back to {{ parent.title }}</a>
+<dl>
+	<dt>Views:</dt><dd>{{ category.views }}</dd>
+</dl>
 <ul>
 	{% for child_category in child_categories %}
-	<li><a href="{{ child_category.url }}"><img src="{{ child_category.thumbnail_url }}" alt="{{ child_category.title }}" /><br />{{ child_category.title }}</a></li>
+		<li><a href="{{ child_category.url }}"><img src="{{ child_category.thumbnail_url }}" alt="{{ child_category.title }}" /><br />{{ child_category.title }} <div class="views-small">Views: {{ child_category.views }}</div></a></li>
 	{% endfor %}
 	{% for image in images %}
-	<li><a href="{{ image.url }}"><img src="{{ image.thumbnail_url }}" alt="{{ image.title }}" /><br />{{ image.title }}</a></li>
+		<li><a href="{{ image.url }}"><img src="{{ image.thumbnail_url }}" alt="{{ image.title }}" /><br />{{ image.title }} <div class="views-small">Views: {{ image.views }}</div></a></li>
 	{% endfor %}
 </ul>
 </body>
