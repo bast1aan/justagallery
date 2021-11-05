@@ -1,0 +1,12 @@
+- ~~bug: don't crash on empty album~~
+- ~~bug: show parent album sizes of thumbnails of subalbums~~
+- ~~implement views~~
+- implement default image of album
+- implement hidden albums
+- implement private albums
+- autogenerate album slugs
+- implement frontend
+- write importer for gallery2
+- implement image size recognition
+- remove thumbnails of image if image changes or gets deleted
+- rename 'catgories' to 'albums in db'
