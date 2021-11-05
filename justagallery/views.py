@@ -1,3 +1,5 @@
+import logging
+
 from itertools import chain
 from dataclasses import dataclass
 
@@ -11,6 +13,9 @@ from justagallery.domain.category import get_display_formats, get_default_thumbn
 from .domain.image import create_thumbnail, Size
 from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url, get_size_from_str
+
+
+logger = logging.getLogger(__name__)
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -64,6 +69,13 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 		image = models.Image.objects.get(category=category, slug=image_slug)
 	except models.Image.DoesNotExist:
 		raise Http404('Image not found')
+
+	image_url = get_url_by_image(image)
+	if image_url not in request.headers.get('referer', ''):
+		image.views += 1
+		image.save()
+		logger.debug('Increased views counter to {}'.format(image.views))
+
 	display_formats = get_display_formats(image)
 	thumbnails = [{
 		'width': df.width,
@@ -75,7 +87,7 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 	thumbnails.sort(key=lambda dct: (dct['width'], dct['height'], dct['crop']))
 
 	# use parameter-less URL for default (1st) format
-	thumbnails[0]['image_url'] = get_url_by_image(image)
+	thumbnails[0]['image_url'] = image_url
 
 	category_url = get_url_by_category(category)
 
