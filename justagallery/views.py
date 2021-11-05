@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol, Union
 
 from django.conf import settings
+from django.contrib.sessions.backends.base import SessionBase
 from django.db.models import Model
 from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
@@ -18,7 +19,7 @@ from .domain.url import get_url_by_image, get_category_by_url, get_url_by_catego
 
 
 class HasSession(Protocol):
-	session:dict
+	session:SessionBase
 
 class HasViews(Protocol):
 	views:int
@@ -152,8 +153,11 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 		return static_serve()
 
 
-def _count_view(model: ViewsModel, session: dict) -> bool:
-	""" Count view, if not done before in the session of the user. """
+def _count_view(model: ViewsModel, session: SessionBase) -> bool:
+	"""
+		Count view, if not done before in the session of the user.
+		:return: True if view is counted, False if not
+	"""
 	if 'views' not in session:
 		session['views'] = {}
 
@@ -167,6 +171,8 @@ def _count_view(model: ViewsModel, session: dict) -> bool:
 		return False
 
 	session['views'][model_type].append(model.pk)
+	session.modified = True
+
 	model.views += 1
 	model.save()
 	logger.debug('Increased views counter for {}({}) to {}'.format(
