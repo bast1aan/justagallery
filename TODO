@@ -1,9 +1,10 @@
 - ~~bug: don't crash on empty album~~
 - ~~bug: show parent album sizes of thumbnails of subalbums~~
 - ~~implement views~~
-- implement default image of album
+- ~~implement default image of album~~
 - implement hidden albums
 - implement private albums
+- implement items order
 - autogenerate album slugs
 - implement frontend
 - write importer for gallery2
