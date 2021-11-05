@@ -32,6 +32,15 @@ def category(request: HttpRequest, url) -> HttpResponse:
 
 	url = url.strip('/')
 	category = get_category_by_url(url)
+
+	category_url = get_url_by_category(category)
+	if category_url not in request.headers.get('referer', ''):
+		# Only count a view if navigating forwards to it.
+		# So navigating backwards from images or subcategories, won't count.
+		category.views += 1
+		category.save()
+		logger.debug('Increased views counter to {}'.format(category.views))
+
 	if not category:
 		raise Http404('Category not found')
 	if category.parent:
@@ -72,6 +81,8 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 
 	image_url = get_url_by_image(image)
 	if image_url not in request.headers.get('referer', ''):
+		# Only count a view if navigating forwards to it.
+		# So navigating backwards from subsizes, won't count.
 		image.views += 1
 		image.save()
 		logger.debug('Increased views counter to {}'.format(image.views))
