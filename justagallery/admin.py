@@ -1,10 +1,11 @@
-from typing import Protocol
+from typing import Protocol, Union
 
 from django.contrib import admin
 from django.contrib.admin import FieldListFilter, RelatedFieldListFilter
 from django.contrib.auth.models import User
 from django.db.models import QuerySet, Model
 from django import forms
+from django.http import HttpRequest
 
 from . import models
 
@@ -47,7 +48,9 @@ class _OwnerMixin(admin.ModelAdmin):
 		if hasattr(db_field.related_model, 'owner'):
 			if not request.user.is_superuser:
 				# Only show objects that user owns
-				kwargs['queryset'] = db_field.related_model.objects.filter(owner=request.user)
+				if 'queryset' not in kwargs:
+					kwargs['queryset'] = db_field.related_model.objects
+				kwargs['queryset'].filter(owner=request.user)
 		formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
 		if db_field.name == 'owner':
 			if not request.user.is_superuser:
@@ -85,7 +88,8 @@ class ThumbnailFormatAdmin(admin.ModelAdmin):
 
 class CategoryAdmin(_OwnerMixin, admin.ModelAdmin):
 	model = models.Category
-	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats', 'owner', 'images']
+	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats', 'owner',
+		'default_image', 'images']
 	list_display = ('title', 'parent', 'slug', 'created_at', 'updated_at')
 	ordering = ('-parent', '-created_at', )
 	list_filter = ('parent',)
@@ -95,6 +99,24 @@ class CategoryAdmin(_OwnerMixin, admin.ModelAdmin):
 	def save_related(self, request, form: CategoryForm, formsets, change):
 		super().save_related(request, form, formsets, change)
 		form.save_images(request, form.instance)
+
+	def formfield_for_foreignkey(self, db_field, request: Union[HttpRequest, HasUser], **kwargs):
+		if db_field.name == 'default_image':
+			try:
+				category_id = int(request.resolver_match.kwargs['object_id'])
+			except Exception:
+				category_id = 0  # would select nothing
+			kwargs['queryset'] = models.Image.objects.filter(category_id=category_id)
+		formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
+		return formfield
+
+	def formfield_for_dbfield(self, db_field, request, **kwargs):
+		formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+		formfield.widget.can_delete_related = False
+		formfield.widget.can_change_related = False
+		formfield.widget.can_add_related = False
+		formfield.widget.can_view_related = False
+		return formfield
 
 
 class ImageAdmin(_OwnerMixin, admin.ModelAdmin):

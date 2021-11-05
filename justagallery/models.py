@@ -40,6 +40,8 @@ class Category(models.Model):
 	updated_at = models.DateTimeField(default=datetime.now)
 	default_thumbnail_format = models.ForeignKey(ThumbnailFormat, on_delete=models.RESTRICT,
 		related_name='default_for_categories', blank=True, null=True)
+	default_image = models.ForeignKey('Image', on_delete=models.SET_NULL, blank=True, null=True,
+		related_name='default_for_category')
 	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='categories', blank=True)
 	owner = models.ForeignKey(User, on_delete=models.RESTRICT, blank=True, null=True)
 	views = models.IntegerField(default=0)
