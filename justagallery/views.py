@@ -33,7 +33,8 @@ def category(request: HttpRequest, url) -> HttpResponse:
 		parent = Item(url='/', title='index', thumbnail_url='')
 	child_categories = [
 		Item(url=get_url_by_category(child_category), title=child_category.title,
-				thumbnail_url=get_thumbnail_url(child_category.images.first(), get_default_thumbnail_format(child_category)))
+				thumbnail_url=get_thumbnail_url(child_category.images.first(), get_default_thumbnail_format(child_category))
+					if child_category.images.count() > 0 else '')
 			for child_category in category.children.all()
 	]
 	images = [
