@@ -3,7 +3,7 @@ from typing import Protocol, Union
 from django.contrib import admin
 from django.contrib.admin import FieldListFilter, RelatedFieldListFilter
 from django.contrib.auth.models import User
-from django.db.models import QuerySet, Model
+from django.db.models import QuerySet, Model, Q
 from django import forms
 from django.http import HttpRequest
 
@@ -106,7 +106,8 @@ class CategoryAdmin(_OwnerMixin, admin.ModelAdmin):
 				category_id = int(request.resolver_match.kwargs['object_id'])
 			except Exception:
 				category_id = 0  # would select nothing
-			kwargs['queryset'] = models.Image.objects.filter(category_id=category_id)
+			kwargs['queryset'] = models.Image.objects.filter(
+				Q(category_id=category_id) | Q(category__parent_id=category_id))
 		formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
 		return formfield
 
