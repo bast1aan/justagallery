@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.views.static import serve
 
 from justagallery.domain.category import get_display_formats, get_default_thumbnail_format, \
-	get_default_thumbnail_formats
+	get_default_thumbnail_formats, get_default_image
 from .domain.image import create_thumbnail, Size
 from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url, get_size_from_str
@@ -62,7 +62,7 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 	default_thumbnail_format = get_default_thumbnail_format(category)
 	child_categories = [
 		Item(url=get_url_by_category(child_category), title=child_category.title, views=child_category.views,
-				thumbnail_url=get_thumbnail_url(child_category.images.first(), default_thumbnail_format)
+				thumbnail_url=get_thumbnail_url(get_default_image(child_category), default_thumbnail_format)
 					if child_category.images.count() > 0 else '')
 			for child_category in category.children.all()
 	]
