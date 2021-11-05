@@ -2,8 +2,10 @@ import logging
 
 from itertools import chain
 from dataclasses import dataclass
+from typing import Protocol, Union
 
 from django.conf import settings
+from django.db.models import Model
 from django.http import HttpRequest, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.static import serve
@@ -15,6 +17,16 @@ from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url, get_size_from_str
 
 
+class HasSession(Protocol):
+	session:dict
+
+class HasViews(Protocol):
+	views:int
+
+HttpSessionRequest = Union[HttpRequest, HasSession]
+ViewsModel = Union[Model, HasViews]
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,7 +35,7 @@ def index(request: HttpRequest) -> HttpResponse:
 	return render(request, 'index.html.j2', dict(categories=categories), using='jinja2')
 
 
-def category(request: HttpRequest, url) -> HttpResponse:
+def category(request: HttpSessionRequest, url) -> HttpResponse:
 	@dataclass
 	class Item:
 		url: str
@@ -37,9 +49,7 @@ def category(request: HttpRequest, url) -> HttpResponse:
 	if category_url not in request.headers.get('referer', ''):
 		# Only count a view if navigating forwards to it.
 		# So navigating backwards from images or subcategories, won't count.
-		category.views += 1
-		category.save()
-		logger.debug('Increased views counter to {}'.format(category.views))
+		_count_view(category, request.session)
 
 	if not category:
 		raise Http404('Category not found')
@@ -69,7 +79,7 @@ def category(request: HttpRequest, url) -> HttpResponse:
 	return render(request, 'category.html.j2', template_vars, using='jinja2')
 
 
-def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpResponse:
+def image(request:HttpSessionRequest, category_slug:str , image_slug: str) -> HttpResponse:
 	format: str = request.GET.get('format', None)
 	category = get_category_by_url(category_slug.strip('/'))
 	if not category:
@@ -83,9 +93,7 @@ def image(request:HttpRequest, category_slug:str , image_slug: str) -> HttpRespo
 	if image_url not in request.headers.get('referer', ''):
 		# Only count a view if navigating forwards to it.
 		# So navigating backwards from subsizes, won't count.
-		image.views += 1
-		image.save()
-		logger.debug('Increased views counter to {}'.format(image.views))
+		_count_view(image, request.session)
 
 	display_formats = get_display_formats(image)
 	thumbnails = [{
@@ -142,3 +150,25 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 			raise Http404('Unknown size')
 		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, size, crop)
 		return static_serve()
+
+
+def _count_view(model: ViewsModel, session: dict) -> bool:
+	""" Count view, if not done before in the session of the user. """
+	if 'views' not in session:
+		session['views'] = {}
+
+	model_type = model.__class__.__name__
+
+	# defaultdict won't serialize, so we must create every item explicitely
+	if model_type not in session['views']:
+		session['views'][model_type] = []
+
+	if model.pk in session['views'][model_type]:
+		return False
+
+	session['views'][model_type].append(model.pk)
+	model.views += 1
+	model.save()
+	logger.debug('Increased views counter for {}({}) to {}'.format(
+		model_type, model.pk, model.views))
+	return True
