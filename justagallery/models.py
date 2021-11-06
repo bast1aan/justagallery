@@ -1,9 +1,16 @@
 import os
 import logging
 from datetime import datetime
+from typing import TypeVar, Union, Iterator, Sized, Type
 
 from django.contrib.auth.models import User
 from django.db import models
+
+from .domain import entities
+
+T = TypeVar('T', bound=models.Model)
+
+SizedIterator = Union[Iterator[T], Sized]
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +19,14 @@ def upload_to(instance: models.Model, filename: str) -> str:
 		return "{}/{}".format(instance.category.id, filename)
 	return filename
 
+class Repository(entities.Repository[T]):
+	def __init__(self, model: Type[T]):
+		self.model = model
+	def filter(self, **kwargs) -> SizedIterator[T]:
+		return self.model.objects.filter(**kwargs)
 
-class ThumbnailFormat(models.Model):
+
+class ThumbnailFormat(models.Model, entities.ThumbnailFormat):
 	id = models.AutoField(primary_key=True)
 	width = models.IntegerField()
 	height = models.IntegerField()
@@ -30,7 +43,7 @@ class ThumbnailFormat(models.Model):
 		)
 
 
-class Category(models.Model):
+class Category(models.Model, entities.Category):
 	id = models.AutoField(primary_key=True)
 	parent = models.ForeignKey('self', on_delete=models.RESTRICT, related_name='children', blank=True, null=True)
 	title = models.CharField(max_length=255)
@@ -59,7 +72,7 @@ class Category(models.Model):
 		unique_together = ('parent', 'slug')
 
 
-class Image(models.Model):
+class Image(models.Model, entities.Image):
 	id = models.AutoField(primary_key=True)
 	category = models.ForeignKey(Category, on_delete=models.RESTRICT, related_name='images')
 	title = models.CharField(max_length=255, blank=True)

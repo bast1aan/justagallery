@@ -1,36 +1,35 @@
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Any
 
-from django.db.models import Model
-from justagallery import models
+from . import entities
 
 
-def get_display_formats(model: Model) -> Iterator[models.ThumbnailFormat]:
+def get_display_formats(model: Any) -> Iterator[entities.ThumbnailFormat]:
 	""" Retrieve display formats recursivly to the root category. """
-	if isinstance(model, models.Image):
-		display_formats: [models.ThumbnailFormat] = model.display_formats.all()
+	if isinstance(model, entities.Image):
+		display_formats = model.display_formats.all()
 		if len(display_formats) > 0:
 			return display_formats
 		model = model.category
-	if isinstance(model, models.Category):
+	if isinstance(model, entities.Category):
 		while model:
-			display_formats: [models.ThumbnailFormat] = model.display_formats.all()
+			display_formats = model.display_formats.all()
 			if len(display_formats) > 0:
 				return display_formats
 			model = model.parent
 
-def get_default_thumbnail_format(category: models.Category) -> Optional[models.ThumbnailFormat]:
+def get_default_thumbnail_format(category: entities.Category) -> Optional[entities.ThumbnailFormat]:
 	""" Retrieve default thumbnail format recursively to the root category. """
 	return next(get_default_thumbnail_formats(category), None)
 
-def get_default_thumbnail_formats(category: models.Category) -> Iterator[models.ThumbnailFormat]:
+def get_default_thumbnail_formats(category: entities.Category) -> Iterator[entities.ThumbnailFormat]:
 	""" Retrieve all default thumbnail formats recursively to the root category. """
 	while category:
-		default_thumbnail_format: models.ThumbnailFormat = category.default_thumbnail_format
+		default_thumbnail_format = category.default_thumbnail_format
 		if default_thumbnail_format:
 			yield default_thumbnail_format
 		category = category.parent
 
-def get_default_image(category: models.Category) -> models.Image:
+def get_default_image(category: entities.Category) -> entities.Image:
 	"""
 		Calculate default image of category, according to following algorithm:
 		First try to find a defined default_image in the category, if not found
@@ -39,13 +38,13 @@ def get_default_image(category: models.Category) -> models.Image:
 		child categories.
 	"""
 
-	def default_image(category):
+	def default_image(category: entities.Category) -> entities.Image:
 		if category.default_image:
 			return category.default_image
 		for category in category.children.all():
 			return default_image(category)
 
-	def first_image(category):
+	def first_image(category: entities.Category) -> entities.Image:
 		first = category.images.first()
 		if first:
 			return first
