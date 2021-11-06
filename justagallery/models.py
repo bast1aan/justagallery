@@ -1,11 +1,16 @@
 import os
 import logging
 from datetime import datetime
+from typing import TypeVar, Union, Iterator, Sized, Type
 
 from django.contrib.auth.models import User
 from django.db import models
 
 from .domain import entities
+
+T = TypeVar('T', bound=models.Model)
+
+SizedIterator = Union[Iterator[T], Sized]
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +18,12 @@ def upload_to(instance: models.Model, filename: str) -> str:
 	if isinstance(instance, Image):
 		return "{}/{}".format(instance.category.id, filename)
 	return filename
+
+class Repository(entities.Repository[T]):
+	def __init__(self, model: Type[T]):
+		self.model = model
+	def filter(self, **kwargs) -> SizedIterator[T]:
+		return self.model.objects.filter(**kwargs)
 
 
 class ThumbnailFormat(models.Model, entities.ThumbnailFormat):

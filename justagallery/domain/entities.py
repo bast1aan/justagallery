@@ -1,7 +1,7 @@
 """
 	Entities used in the domain.
-	These are abstract interfaces defining their behaviour
-	without dependending on the underlying framework.
+	These are abstract interfaces defining their behaviour without
+	depending on the implementation and underlying framework.
 """
 
 from datetime import datetime
@@ -18,6 +18,9 @@ class EntitySet(Generic[T]):
 	def first(self) -> Optional[T]:
 		...
 
+class Repository(Generic[T]):
+	def filter(self, **kwargs) -> EntitySet[T]:
+		...
 
 class ThumbnailFormat:
 	id: int

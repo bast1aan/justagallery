@@ -1,20 +1,18 @@
 from typing import Dict, Optional, Tuple
 
 from . import entities
-from .. import models
 
 _URLS_TO_CATEGORY: Dict[str, entities.Category] = {}
 
 
-def get_category_by_url(url: str) -> Optional[entities.Category]:
+def get_category_by_url(url: str, repository: entities.Repository[entities.Category]) -> Optional[entities.Category]:
 	url_parts = url.split('/')
-	try:
-		category = None
-		for url_part in url_parts:
-			category = models.Category.objects.filter(parent=category, slug=url_part).first()
-		return category
-	except models.Category.DoesNotExist:
-		return None
+	category = None
+	for url_part in url_parts:
+		category = repository.filter(parent=category, slug=url_part).first()
+		if not category:
+			return None
+	return category
 
 
 def get_url_by_category(category: entities.Category) -> str:
