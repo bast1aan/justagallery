@@ -1,30 +1,41 @@
-import os
-from typing import NamedTuple
+from __future__ import annotations
+from abc import ABCMeta
+from typing import NamedTuple, Type
 
-from PIL import Image
 
 class Size(NamedTuple):
 	x: int
 	y: int
 
+class Image(metaclass=ABCMeta):
+	@staticmethod
+	def create_thumbnail(orig: str, dest: str, size: Size, crop: bool) -> None:
+		"""
+			Create thumbnail from original image `orig', writing to
+			`dest'. The given size is indicating the maximum of either
+			dimension. If `crop' is given, the thumbnail is resized to the minimum
+			of either dimension, and the leftover of the max dimension is cropped
+			away from the perspective of the center of the image.
+
+			:param orig: path to original file
+			:param dest: path to destination file
+			:param size: x and y size of the thumbnail
+			:param crop: whether the thumbnail must be cropped
+		"""
+		...
+
+image: Type[Image] = None # Image implementation used in this module. Defaults to _pil.Image if not set
+
+def _image() -> Type[Image]:
+	global image
+	if not image:
+		# Default implementation is PIL
+		from . import _pil
+		image = _pil.Image
+	return image
+
+
 def create_thumbnail(orig: str, dest: str, size: Size, crop: bool):
-	destdir = os.path.dirname(dest)
-	if not os.path.exists(destdir):
-		os.makedirs(destdir)
-	with Image.open(orig) as im:
-		if crop:
-			im = _crop_max_square(im)
-		im.thumbnail(size)
-		im.save(dest, 'JPEG', quality=86)
+	return _image().create_thumbnail(orig, dest, size, crop)
+create_thumbnail.__doc__ = Image.create_thumbnail.__doc__
 
-def _crop_center(im, crop_size: Size):
-	img_size = Size(*im.size)
-	return im.crop((
-		(img_size.x - crop_size.x) // 2,
-		(img_size.y - crop_size.y) // 2,
-		(img_size.x + crop_size.x) // 2,
-		(img_size.y + crop_size.y) // 2
-	))
-
-def _crop_max_square(im):
-	return _crop_center(im, Size(*(min(im.size),)*2))
