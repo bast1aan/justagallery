@@ -5,6 +5,8 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.db import models
 
+from .domain import entities
+
 logger = logging.getLogger(__name__)
 
 def upload_to(instance: models.Model, filename: str) -> str:
@@ -13,7 +15,7 @@ def upload_to(instance: models.Model, filename: str) -> str:
 	return filename
 
 
-class ThumbnailFormat(models.Model):
+class ThumbnailFormat(models.Model, entities.ThumbnailFormat):
 	id = models.AutoField(primary_key=True)
 	width = models.IntegerField()
 	height = models.IntegerField()
@@ -30,7 +32,7 @@ class ThumbnailFormat(models.Model):
 		)
 
 
-class Category(models.Model):
+class Category(models.Model, entities.Category):
 	id = models.AutoField(primary_key=True)
 	parent = models.ForeignKey('self', on_delete=models.RESTRICT, related_name='children', blank=True, null=True)
 	title = models.CharField(max_length=255)
@@ -59,7 +61,7 @@ class Category(models.Model):
 		unique_together = ('parent', 'slug')
 
 
-class Image(models.Model):
+class Image(models.Model, entities.Image):
 	id = models.AutoField(primary_key=True)
 	category = models.ForeignKey(Category, on_delete=models.RESTRICT, related_name='images')
 	title = models.CharField(max_length=255, blank=True)

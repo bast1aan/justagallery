@@ -1,11 +1,12 @@
 from typing import Dict, Optional, Tuple
 
+from . import entities
 from .. import models
 
-_URLS_TO_CATEGORY: Dict[str, models.Category] = {}
+_URLS_TO_CATEGORY: Dict[str, entities.Category] = {}
 
 
-def get_category_by_url(url: str) -> Optional[models.Category]:
+def get_category_by_url(url: str) -> Optional[entities.Category]:
 	url_parts = url.split('/')
 	try:
 		category = None
@@ -16,7 +17,7 @@ def get_category_by_url(url: str) -> Optional[models.Category]:
 		return None
 
 
-def get_url_by_category(category: models.Category) -> str:
+def get_url_by_category(category: entities.Category) -> str:
 	url_parts = []
 	while(category):
 		url_parts.append(category.slug)
@@ -25,7 +26,7 @@ def get_url_by_category(category: models.Category) -> str:
 	return '/' + '/'.join(url_parts) + '/'
 
 
-def get_url_by_image(image: models.Image, format: models.ThumbnailFormat = None) -> str:
+def get_url_by_image(image: entities.Image, format: entities.ThumbnailFormat = None) -> str:
 	category_part = get_url_by_category(image.category)
 	url = "{}{}.html".format(category_part, image.slug)
 	if format:
@@ -33,14 +34,14 @@ def get_url_by_image(image: models.Image, format: models.ThumbnailFormat = None)
 	return url
 
 
-def get_thumbnail_url(image: models.Image, thumbnail_format: models.ThumbnailFormat) -> str:
+def get_thumbnail_url(image: entities.Image, thumbnail_format: entities.ThumbnailFormat) -> str:
 	return "/thumbnails/{}/{}/{}".format(
-		image.category_id,
+		image.category.id,
 		_get_size(thumbnail_format),
 		image.slug
 	)
 
-def _get_size(format: models.ThumbnailFormat) -> str:
+def _get_size(format: entities.ThumbnailFormat) -> str:
 	return "{}x{}{}".format(
 		format.width,
 		format.height,
