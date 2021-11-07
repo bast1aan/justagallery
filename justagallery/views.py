@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def index(request: HttpRequest) -> HttpResponse:
-	categories = models.Category.objects.filter(parent=None).order_by('-created_at').all()
+	categories = models.Category.objects.filter(parent=None, hidden=False).order_by('-created_at').all()
 	return render(request, 'index.html.j2', dict(categories=categories), using='jinja2')
 
 
@@ -64,7 +64,7 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 		Item(url=get_url_by_category(child_category), title=child_category.title, views=child_category.views,
 				thumbnail_url=get_thumbnail_url(get_default_image(child_category), default_thumbnail_format)
 					if child_category.images.count() > 0 else '')
-			for child_category in category.children.all()
+			for child_category in category.children.filter(hidden=False)
 	]
 	images = [
 		Item(url=get_url_by_image(image), title=image.title, views=image.views,

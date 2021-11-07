@@ -58,6 +58,7 @@ class Category(models.Model, entities.Category):
 	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='categories', blank=True)
 	owner = models.ForeignKey(User, on_delete=models.RESTRICT, blank=True, null=True)
 	views = models.IntegerField(default=0)
+	hidden = models.BooleanField(default=False)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
