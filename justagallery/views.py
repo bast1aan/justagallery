@@ -2,7 +2,7 @@ import logging
 
 from itertools import chain
 from dataclasses import dataclass
-from typing import Protocol, Union
+from typing import Protocol, Union, DefaultDict, cast
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import SessionBase
@@ -45,7 +45,7 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 		views: int
 
 	url = url.strip('/')
-	category = get_category_by_url(url, models.Repository(models.Category))
+	category = get_category_by_url(url, cast(models.Repository[models.Category], models.Repository(models.Category)))
 
 	category_url = get_url_by_category(category)
 	if category_url not in request.headers.get('referer', ''):
@@ -83,7 +83,7 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 
 def image(request:HttpSessionRequest, category_slug:str , image_slug: str) -> HttpResponse:
 	format: str = request.GET.get('format', None)
-	category = get_category_by_url(category_slug.strip('/'), models.Repository(models.Category))
+	category = get_category_by_url(category_slug.strip('/'), cast(models.Repository[models.Category], models.Repository(models.Category)))
 	if not category:
 		raise Http404('Category not found')
 	try:
