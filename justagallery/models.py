@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime
-from typing import TypeVar, Union, Iterator, Sized, Type
+from typing import TypeVar, Union, Iterator, Sized, Type, Generic
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -10,7 +10,7 @@ from .domain import entities
 
 T = TypeVar('T', bound=models.Model)
 
-SizedIterator = Union[Iterator[T], Sized]
+class SizedIterator(Iterator[T], Sized): ...
 
 logger = logging.getLogger(__name__)
 
