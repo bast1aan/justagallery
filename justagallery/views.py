@@ -2,7 +2,7 @@ import logging
 
 from itertools import chain
 from dataclasses import dataclass
-from typing import Protocol, Union
+from typing import Protocol, Union, TypeVar
 
 from django.conf import settings
 from django.contrib.auth.models import User, AnonymousUser
@@ -28,13 +28,13 @@ class HasViews(Protocol):
 
 HttpRequest = Union[BaseHttpRequest, HttpRequestExtra]
 ViewsModel = Union[Model, HasViews]
-
+ExtendsQuerySet = TypeVar('ExtendsQuerySet', bound=QuerySet)
 
 logger = logging.getLogger(__name__)
 
 
 def index(request: HttpRequest) -> HttpResponse:
-	categories = _filter_categories(models.Category.objects, request.user).filter(parent=None).order_by('-created_at').all()
+	categories = _filter_categories(models.Category.objects.all(), request.user).filter(parent=None).order_by('-created_at').all()
 	return render(request, 'index.html.j2', dict(categories=categories), using='jinja2')
 
 
@@ -66,7 +66,7 @@ def category(request: HttpRequest, url) -> HttpResponse:
 		Item(url=get_url_by_category(child_category), title=child_category.title, views=child_category.views,
 				thumbnail_url=get_thumbnail_url(get_default_image(child_category), default_thumbnail_format)
 					if child_category.images.count() > 0 else '')
-			for child_category in _filter_categories(category.children, request.user)
+			for child_category in _filter_categories(category.children.all(), request.user)
 	]
 	images = [
 		Item(url=get_url_by_image(image), title=image.title, views=image.views,
@@ -182,7 +182,7 @@ def _count_view(model: ViewsModel, session: SessionBase) -> bool:
 		model_type, model.pk, model.views))
 	return True
 
-def _filter_categories(qs: QuerySet, user: User) -> QuerySet:
+def _filter_categories(qs: ExtendsQuerySet, user: User) -> ExtendsQuerySet:
 	""" Filter query for categories to be shown """
 	q = Q(hidden=False)
 	if user and not isinstance(user, AnonymousUser):
