@@ -49,6 +49,8 @@ def category(request: HttpRequest, url) -> HttpResponse:
 	url = url.strip('/')
 	repository: models.Repository[models.Category] = models.Repository(models.Category)
 	category = get_category_by_url(url, repository)
+	if not category:
+		raise Http404('Category not found')
 
 	if owner := is_private(category):
 		if owner != request.user:
@@ -60,8 +62,6 @@ def category(request: HttpRequest, url) -> HttpResponse:
 		# So navigating backwards from images or subcategories, won't count.
 		_count_view(category, request.session)
 
-	if not category:
-		raise Http404('Category not found')
 	if category.parent:
 		parent = Item(url=get_url_by_category(category.parent), title=category.parent.title, thumbnail_url='', views=0)
 	else:
