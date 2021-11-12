@@ -5,7 +5,7 @@
 """
 
 from datetime import datetime
-from typing import TypeVar, Optional, Sized, Generic, Iterator
+from typing import TypeVar, Optional, Sized, Generic, Iterator, Protocol
 
 T = TypeVar('T')
 
@@ -30,6 +30,11 @@ class Repository(Generic[T]):
 	def filter(self, **kwargs) -> EntitySet[T]:
 		...
 
+class User(Protocol):
+	pk: int
+	is_anonymous: bool
+	def get_username(self) -> str: ...
+
 class ThumbnailFormat:
 	id: int
 	width: int
@@ -50,6 +55,9 @@ class Category:
 	images: EntityManager['Image']
 	children: EntityManager['Category']
 	views: int
+	owner: User
+	hidden: bool
+	private: bool
 
 class Image:
 	id: int
@@ -60,4 +68,4 @@ class Image:
 	created_at: datetime
 	updated_at: datetime
 	display_formats: EntityManager[ThumbnailFormat]
-	views: int
+	owner: User

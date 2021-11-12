@@ -5,15 +5,15 @@ from dataclasses import dataclass
 from typing import Protocol, Union, TypeVar
 
 from django.conf import settings
-from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sessions.backends.base import SessionBase
 from django.db.models import Model, QuerySet, Q
-from django.http import HttpRequest as BaseHttpRequest, HttpResponse, Http404
+from django.http import HttpRequest as BaseHttpRequest, HttpResponse, Http404, HttpResponseForbidden
 from django.shortcuts import render
 from django.views.static import serve
 
 from justagallery.domain.category import get_display_formats, get_default_thumbnail_format, \
-	get_default_thumbnail_formats, get_default_image
+	get_default_thumbnail_formats, get_default_image, is_private
+from .domain import entities
 from .domain.image import create_thumbnail, Size
 from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url, get_size_from_str
@@ -21,7 +21,7 @@ from .domain.url import get_url_by_image, get_category_by_url, get_url_by_catego
 
 class HttpRequestExtra(Protocol):
 	session: SessionBase
-	user: User
+	user: entities.User
 
 class HasViews(Protocol):
 	views:int
@@ -49,6 +49,10 @@ def category(request: HttpRequest, url) -> HttpResponse:
 	url = url.strip('/')
 	repository: models.Repository[models.Category] = models.Repository(models.Category)
 	category = get_category_by_url(url, repository)
+
+	if owner := is_private(category):
+		if owner != request.user:
+			return HttpResponseForbidden('No access')
 
 	category_url = get_url_by_category(category)
 	if category_url not in request.headers.get('referer', ''):
@@ -94,6 +98,10 @@ def image(request: HttpRequest, category_slug: str , image_slug: str) -> HttpRes
 		image = models.Image.objects.get(category=category, slug=image_slug)
 	except models.Image.DoesNotExist:
 		raise Http404('Image not found')
+
+	if owner := is_private(category):
+		if owner != request.user:
+			return HttpResponseForbidden('No access')
 
 	image_url = get_url_by_image(image)
 	if image_url not in request.headers.get('referer', ''):
@@ -184,10 +192,10 @@ def _count_view(model: ViewsModel, session: SessionBase) -> bool:
 		model_type, model.pk, model.views))
 	return True
 
-def _filter_categories(qs: ExtendsQuerySet, user: User) -> ExtendsQuerySet:
+def _filter_categories(qs: ExtendsQuerySet, user: entities.User) -> ExtendsQuerySet:
 	""" Filter query for categories to be shown """
-	q = Q(hidden=False)
-	if user and not isinstance(user, AnonymousUser):
+	q = Q(hidden=False, private=False)
+	if user and not user.is_anonymous:
 		# someone logged in
 		q |= Q(owner=user)
 	return qs.filter(q)

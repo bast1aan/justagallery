@@ -55,3 +55,14 @@ def get_default_image(category: entities.Category) -> entities.Image:
 	if not image:
 		image = first_image(category)
 	return image
+
+
+def is_private(category: entities.Category) -> Optional[entities.User]:
+	"""
+		Looks up if category or its parents are private.
+		:return: owner if private, None if not private
+	"""
+	while category:
+		if category.private:
+			return category.owner
+		category = category.parent
