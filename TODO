@@ -5,7 +5,10 @@
 - implement hidden albums
 - implement private albums
 - implement items order
+- BUG: admin shows parent albums from other owners
 - BUG: only admin should be able to create root albums
+- BUG: bulk deletion in admin does not delete files on disk
+- implement next/prev/first/last on image pages
 - autogenerate album slugs
 - implement frontend
 - write importer for gallery2
