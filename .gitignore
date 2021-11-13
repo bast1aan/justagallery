@@ -1,0 +1,7 @@
+uploads/
+thumbnails/
+__pycache__
+.idea/
+db.sqlite3
+justagallery/migrations/
+justagallery/settings/localsettings.py
