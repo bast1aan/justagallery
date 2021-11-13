@@ -42,7 +42,8 @@ def get_default_image(category: entities.Category) -> entities.Image:
 		if category.default_image:
 			return category.default_image
 		for category in category.children.all():
-			return default_image(category)
+			if _default_image := default_image(category):
+				return _default_image
 
 	def first_image(category: entities.Category) -> entities.Image:
 		first = category.images.first()
