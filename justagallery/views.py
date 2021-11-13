@@ -2,12 +2,13 @@ import logging
 
 from itertools import chain
 from dataclasses import dataclass
-from typing import Protocol, Union
+from typing import Protocol, Union, TypeVar
 
 from django.conf import settings
+from django.contrib.auth.models import User, AnonymousUser
 from django.contrib.sessions.backends.base import SessionBase
-from django.db.models import Model
-from django.http import HttpRequest, HttpResponse, Http404
+from django.db.models import Model, QuerySet, Q
+from django.http import HttpRequest as BaseHttpRequest, HttpResponse, Http404
 from django.shortcuts import render
 from django.views.static import serve
 
@@ -18,25 +19,26 @@ from . import models
 from .domain.url import get_url_by_image, get_category_by_url, get_url_by_category, get_thumbnail_url, get_size_from_str
 
 
-class HasSession(Protocol):
-	session:SessionBase
+class HttpRequestExtra(Protocol):
+	session: SessionBase
+	user: User
 
 class HasViews(Protocol):
 	views:int
 
-HttpSessionRequest = Union[HttpRequest, HasSession]
+HttpRequest = Union[BaseHttpRequest, HttpRequestExtra]
 ViewsModel = Union[Model, HasViews]
-
+ExtendsQuerySet = TypeVar('ExtendsQuerySet', bound=QuerySet)
 
 logger = logging.getLogger(__name__)
 
 
 def index(request: HttpRequest) -> HttpResponse:
-	categories = models.Category.objects.filter(parent=None).order_by('-created_at').all()
+	categories = _filter_categories(models.Category.objects.all(), request.user).filter(parent=None).order_by('-created_at').all()
 	return render(request, 'index.html.j2', dict(categories=categories), using='jinja2')
 
 
-def category(request: HttpSessionRequest, url) -> HttpResponse:
+def category(request: HttpRequest, url) -> HttpResponse:
 	@dataclass
 	class Item:
 		url: str
@@ -65,7 +67,7 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 		Item(url=get_url_by_category(child_category), title=child_category.title, views=child_category.views,
 				thumbnail_url=get_thumbnail_url(get_default_image(child_category), default_thumbnail_format)
 					if child_category.images.count() > 0 else '')
-			for child_category in category.children.all()
+			for child_category in _filter_categories(category.children.all(), request.user)
 	]
 	images = [
 		Item(url=get_url_by_image(image), title=image.title, views=image.views,
@@ -82,7 +84,7 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 	return render(request, 'category.html.j2', template_vars, using='jinja2')
 
 
-def image(request:HttpSessionRequest, category_slug:str , image_slug: str) -> HttpResponse:
+def image(request: HttpRequest, category_slug: str , image_slug: str) -> HttpResponse:
 	format: str = request.GET.get('format', None)
 	category_repository: models.Repository[models.Category] = models.Repository(models.Category)
 	category = get_category_by_url(category_slug.strip('/'), category_repository)
@@ -181,3 +183,11 @@ def _count_view(model: ViewsModel, session: SessionBase) -> bool:
 	logger.debug('Increased views counter for {}({}) to {}'.format(
 		model_type, model.pk, model.views))
 	return True
+
+def _filter_categories(qs: ExtendsQuerySet, user: User) -> ExtendsQuerySet:
+	""" Filter query for categories to be shown """
+	q = Q(hidden=False)
+	if user and not isinstance(user, AnonymousUser):
+		# someone logged in
+		q |= Q(owner=user)
+	return qs.filter(q)

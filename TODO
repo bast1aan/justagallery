@@ -5,6 +5,7 @@
 - implement hidden albums
 - implement private albums
 - implement items order
+- BUG: only admin should be able to create root albums
 - autogenerate album slugs
 - implement frontend
 - write importer for gallery2
