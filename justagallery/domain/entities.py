@@ -12,11 +12,19 @@ T = TypeVar('T')
 class SetIterator(Iterator[T], Sized):
 	...
 
-class EntitySet(Generic[T]):
-	def all(self) -> SetIterator[T]:
+class EntityManager(Generic[T]):
+	""" Non-iteratable version of EntitySet """
+	def all(self) -> 'EntitySet[T]':
 		...
 	def first(self) -> Optional[T]:
 		...
+	def count(self) -> int:
+		...
+	def filter(self, **kwargs) -> 'EntitySet[T]':
+		...
+
+class EntitySet(EntityManager[T], SetIterator[T]):
+	...
 
 class Repository(Generic[T]):
 	def filter(self, **kwargs) -> EntitySet[T]:
@@ -38,9 +46,9 @@ class Category:
 	updated_at: datetime
 	default_thumbnail_format: ThumbnailFormat
 	default_image: 'Image'
-	display_formats: EntitySet[ThumbnailFormat]
-	images: EntitySet['Image']
-	children: EntitySet['Category']
+	display_formats: EntityManager[ThumbnailFormat]
+	images: EntityManager['Image']
+	children: EntityManager['Category']
 	views: int
 
 class Image:
@@ -51,5 +59,5 @@ class Image:
 	description: str
 	created_at: datetime
 	updated_at: datetime
-	display_formats: EntitySet[ThumbnailFormat]
+	display_formats: EntityManager[ThumbnailFormat]
 	views: int

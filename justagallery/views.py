@@ -45,7 +45,8 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 		views: int
 
 	url = url.strip('/')
-	category = get_category_by_url(url, models.Repository(models.Category))
+	repository: models.Repository[models.Category] = models.Repository(models.Category)
+	category = get_category_by_url(url, repository)
 
 	category_url = get_url_by_category(category)
 	if category_url not in request.headers.get('referer', ''):
@@ -83,7 +84,8 @@ def category(request: HttpSessionRequest, url) -> HttpResponse:
 
 def image(request:HttpSessionRequest, category_slug:str , image_slug: str) -> HttpResponse:
 	format: str = request.GET.get('format', None)
-	category = get_category_by_url(category_slug.strip('/'), models.Repository(models.Category))
+	category_repository: models.Repository[models.Category] = models.Repository(models.Category)
+	category = get_category_by_url(category_slug.strip('/'), category_repository)
 	if not category:
 		raise Http404('Category not found')
 	try:

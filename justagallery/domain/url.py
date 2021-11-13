@@ -1,11 +1,13 @@
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, TypeVar, Generic, Union
 
 from . import entities
 
 _URLS_TO_CATEGORY: Dict[str, entities.Category] = {}
 
+ExtendsCategory = TypeVar('ExtendsCategory', bound=entities.Category)
 
-def get_category_by_url(url: str, repository: entities.Repository[entities.Category]) -> Optional[entities.Category]:
+
+def get_category_by_url(url: str, repository: entities.Repository[ExtendsCategory]) -> Optional[ExtendsCategory]:
 	url_parts = url.split('/')
 	category = None
 	for url_part in url_parts:
