@@ -50,7 +50,7 @@ class _OwnerMixin(admin.ModelAdmin):
 				# Only show objects that user owns
 				if 'queryset' not in kwargs:
 					kwargs['queryset'] = db_field.related_model.objects
-				kwargs['queryset'].filter(owner=request.user)
+				kwargs['queryset'] = kwargs['queryset'].filter(owner=request.user)
 		formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
 		if db_field.name == 'owner':
 			if not request.user.is_superuser:
