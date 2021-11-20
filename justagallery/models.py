@@ -76,6 +76,7 @@ class Category(models.Model, entities.Category):
 			models.Index(fields=['sequence'])]
 		db_table = 'categories'
 		unique_together = ('parent', 'slug')
+		ordering = ('sequence',)
 
 
 class Image(models.Model, entities.Image):
@@ -127,6 +128,7 @@ class Image(models.Model, entities.Image):
 			models.Index(fields=['sequence'])]
 		db_table = 'images'
 		unique_together = ('category', 'slug')
+		ordering = ('sequence',)
 
 def _save_sequence(instance: Union[Category, Image]):
 	"""

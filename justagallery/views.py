@@ -71,12 +71,12 @@ def category(request: HttpRequest, url) -> HttpResponse:
 		Item(url=get_url_by_category(child_category), title=child_category.title, views=child_category.views,
 				thumbnail_url=get_thumbnail_url(get_default_image(child_category), default_thumbnail_format)
 					if child_category.images.count() > 0 else '')
-			for child_category in _filter_categories(category.children.order_by('sequence').all(), request.user)
+			for child_category in _filter_categories(category.children.all(), request.user)
 	]
 	images = [
 		Item(url=get_url_by_image(image), title=image.title, views=image.views,
 				thumbnail_url=get_thumbnail_url(image, default_thumbnail_format))
-			for image in category.images.order_by('sequence').all()
+			for image in category.images.all()
 	]
 
 	template_vars = dict(
