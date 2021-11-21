@@ -182,7 +182,8 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 		formats = chain(get_display_formats(image), get_default_thumbnail_formats(image.category))
 		if (size.x, size.y, crop) not in [(dp.width, dp.height, dp.crop) for dp in formats]:
 			# thumbnail format not defined. Check also if requested format matches original size.
-			if not image.width or not image.height or crop or image.width != x or image.height != y:
+			if not image.width or not image.height or crop or image.width > x or image.height > y \
+					or (image.width < x and image.height < y):
 				raise Http404('Unknown size')
 		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, size, crop)
 		return static_serve()
