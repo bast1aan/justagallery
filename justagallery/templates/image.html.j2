@@ -4,17 +4,17 @@
 	<div><a href="{{ category_url }}">Go back to category</a></div>
 	{%  set link_idx = 0 if current_thumbnail_idx else 1 %}
 	{% if thumbnails|length > 1 %}<a href="{{ thumbnails[link_idx].image_url }}">{% endif %}
-	<img src="{{ thumbnails[current_thumbnail_idx].thumbnail_url }}" alt="{{ image.title }}" />
+	{% if thumbnails|length > 0 %}<img src="{{ thumbnails[current_thumbnail_idx].thumbnail_url }}" alt="{{ image.title }}" />{% endif %}
 	{% if thumbnails|length > 1 %}</a>{% endif %}
 	<p>
 	{% for thumbnail in thumbnails %}
 		{% if thumbnail == thumbnails[current_thumbnail_idx] %}
 		<strong>{{ thumbnail.width }}x{{ thumbnail.height }}{{ ' (Cropped)' if thumbnail.crop else '' }}</strong>
-		{%  else %}
+		{% elif not (image.width and image.height) or thumbnail.width < image.width or thumbnail.height < image.height %}
 		<a href="{{ thumbnail.image_url }}">{{ thumbnail.width }}x{{ thumbnail.height }}{{ ' (Cropped)' if thumbnail.crop else '' }}</a>
 		{% endif %}
 	{% endfor %}
-	{% if image.width and image.height: %}
+	{% if image.width and image.height %}
 		<a href="{{ image.file.url }}">{{ image.width }}x{{ image.height }} (download full format)</a>
 	{% endif %}
 	</p>
