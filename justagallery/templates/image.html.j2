@@ -14,6 +14,9 @@
 		<a href="{{ thumbnail.image_url }}">{{ thumbnail.width }}x{{ thumbnail.height }}{{ ' (Cropped)' if thumbnail.crop else '' }}</a>
 		{% endif %}
 	{% endfor %}
+	{% if image.width and image.height: %}
+		<a href="{{ image.file.url }}">{{ image.width }}x{{ image.height }} (download full format)</a>
+	{% endif %}
 	</p>
 	<p>{{ image.description }}</p>
 	<dl>
