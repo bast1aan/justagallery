@@ -6,14 +6,15 @@
 - ~~implement private albums~~
 - ~~implement items order~~
 - ~~BUG: admin shows parent albums from other owners~~
+- ~~implement image size recognition~~
 - BUG: only admin should be able to create root albums
 - BUG: bulk deletion in admin does not delete files on disk
 - BUG: some resized pictures are turned 90° in firefox
 - BUG: multi-level category thumbnails not shown
+- BUG: race-condition in os.makedirs when concurrently create thumbnails
 - implement next/prev/first/last on image pages
 - autogenerate album slugs
 - implement frontend
 - write importer for gallery2
-- implement image size recognition
 - remove thumbnails of image if image changes or gets deleted
 - rename 'catgories' to 'albums in db'
