@@ -116,8 +116,28 @@ def image(request: HttpRequest, category_slug: str , image_slug: str) -> HttpRes
 		'crop': df.crop,
 		'thumbnail_url': get_thumbnail_url(image, df),
 		'image_url': get_url_by_image(image, df),
-	} for df in display_formats]
+		} for df in display_formats
+			# filter out thumbnailformats that are larger than or equal to original image.
+			if not (image.width and image.height) or df.width < image.width or df.height < image.height
+	]
 	thumbnails.sort(key=lambda dct: (dct['width'], dct['height'], dct['crop']))
+
+
+	if len(thumbnails) == 0 and image.width and image.height:
+		# No suitable thumbnail formats found. Create one that matches
+		# the original image size.
+		size:int = max(image.width, image.height)
+		df_dct = {
+			'width': size,
+			'height': size,
+			'crop': False,
+		}
+		df_obj: entities.ThumbnailFormat = type('ThumbnailFormat', (entities.ThumbnailFormat,), df_dct)()
+		thumbnails.append({
+			**df_dct,
+			'thumbnail_url': get_thumbnail_url(image, df_obj),
+			'image_url': ''
+		})
 
 	# use parameter-less URL for default (1st) format
 	thumbnails[0]['image_url'] = image_url
@@ -161,7 +181,10 @@ def thumbnail(request: HttpRequest, category_id, size, image_slug) -> HttpRespon
 		size = Size(x, y)
 		formats = chain(get_display_formats(image), get_default_thumbnail_formats(image.category))
 		if (size.x, size.y, crop) not in [(dp.width, dp.height, dp.crop) for dp in formats]:
-			raise Http404('Unknown size')
+			# thumbnail format not defined. Check also if requested format matches original size.
+			if not image.width or not image.height or crop or image.width > x or image.height > y \
+					or (image.width < x and image.height < y):
+				raise Http404('Unknown size')
 		create_thumbnail(image.file.path, settings.THUMBNAILS_ROOT / path, size, crop)
 		return static_serve()
 

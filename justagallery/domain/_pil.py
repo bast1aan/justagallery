@@ -19,6 +19,11 @@ class Image(image.Image):
 			im.save(dest, 'JPEG', quality=86)
 
 	@staticmethod
+	def get_size(path: str) -> image.Size:
+		with PIL.Image.open(path) as im:
+			return image.Size(*im.size)
+
+	@staticmethod
 	def _crop_center(im, crop_size: image.Size):
 		img_size = image.Size(*im.size)
 		return im.crop((

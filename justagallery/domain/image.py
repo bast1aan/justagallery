@@ -24,6 +24,11 @@ class Image(metaclass=ABCMeta):
 		"""
 		...
 
+	@staticmethod
+	def get_size(path: str) -> Size:
+		""" Retrieve the size of the given image on disk. """
+		...
+
 image: Type[Image] = None # Image implementation used in this module. Defaults to _pil.Image if not set
 
 def _image() -> Type[Image]:
@@ -39,3 +44,6 @@ def create_thumbnail(orig: str, dest: str, size: Size, crop: bool):
 	return _image().create_thumbnail(orig, dest, size, crop)
 create_thumbnail.__doc__ = Image.create_thumbnail.__doc__
 
+def get_size(path: str) -> Size:
+	return _image().get_size(path)
+get_size.__doc__ = Image.get_size.__doc__
