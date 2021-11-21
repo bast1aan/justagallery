@@ -3,9 +3,9 @@
 <h1>{{ image.title }}</h1>
 	<div><a href="{{ category_url }}">Go back to category</a></div>
 	{%  set link_idx = 0 if current_thumbnail_idx else 1 %}
-	{% if thumbnails|length > 1 %}<a href="{{ thumbnails[link_idx].image_url }}">{% endif %}
+	{% if thumbnails|length > 1 and not (image.width and image.height) or thumbnails[1].width < image.width or thumbnails[1].height < image.height %}<a href="{{ thumbnails[link_idx].image_url }}">{% endif %}
 	{% if thumbnails|length > 0 %}<img src="{{ thumbnails[current_thumbnail_idx].thumbnail_url }}" alt="{{ image.title }}" />{% endif %}
-	{% if thumbnails|length > 1 %}</a>{% endif %}
+	{% if thumbnails|length > 1 and not (image.width and image.height) or thumbnails[1].width < image.width or thumbnails[1].height < image.height %}</a>{% endif %}
 	<p>
 	{% for thumbnail in thumbnails %}
 		{% if thumbnail == thumbnails[current_thumbnail_idx] %}
