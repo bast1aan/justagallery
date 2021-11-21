@@ -5,6 +5,7 @@ from typing import TypeVar, Union, Iterator, Sized, Type, Generic
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Q
 
 from .domain import entities
 
@@ -60,18 +61,22 @@ class Category(models.Model, entities.Category):
 	views = models.IntegerField(default=0)
 	hidden = models.BooleanField(default=False)
 	private = models.BooleanField(default=False)
+	sequence = models.IntegerField(default=0)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
+		_save_sequence(self)
 		super().save(force_insert, force_update, using, update_fields)
 
 	def __str__(self):
 		return self.title
 
 	class Meta:
-		indexes = [models.Index(fields=['slug']), models.Index(fields=['created_at'])]
+		indexes = [models.Index(fields=['slug']), models.Index(fields=['created_at']),
+			models.Index(fields=['sequence'])]
 		db_table = 'categories'
 		unique_together = ('parent', 'slug')
+		ordering = ('sequence',)
 
 
 class Image(models.Model, entities.Image):
@@ -86,6 +91,7 @@ class Image(models.Model, entities.Image):
 	display_formats = models.ManyToManyField(ThumbnailFormat, related_name='images', blank=True)
 	owner = models.ForeignKey(User, on_delete=models.RESTRICT, blank=True, null=True)
 	views = models.IntegerField(default=0)
+	sequence = models.IntegerField(default=0)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
@@ -99,6 +105,7 @@ class Image(models.Model, entities.Image):
 			if not self.description:
 				# derive description from title
 				self.description = self.title
+		_save_sequence(self)
 		super().save(force_insert, force_update, using, update_fields)
 
 	def __str__(self):
@@ -117,6 +124,25 @@ class Image(models.Model, entities.Image):
 		return ret
 
 	class Meta:
-		indexes = [models.Index(fields=['slug']), models.Index(fields=['created_at'])]
+		indexes = [models.Index(fields=['slug']), models.Index(fields=['created_at']),
+			models.Index(fields=['sequence'])]
 		db_table = 'images'
 		unique_together = ('category', 'slug')
+		ordering = ('sequence',)
+
+def _save_sequence(instance: Union[Category, Image]):
+	"""
+		Calculates sequence, based on category of instance and the previous sequence,
+		and sets it on the instance, only if it is to be created
+	"""
+	if not instance.id and not instance.sequence:
+		if category := getattr(instance, 'category', None):
+			category_q = Q(category=category)
+		else:
+			category_q = Q(parent=instance.parent)
+		prev_instance = instance.__class__.objects.filter(category_q).order_by('-sequence').first()
+		if prev_instance and prev_instance.sequence:
+			prev_sequence = prev_instance.sequence
+		else:
+			prev_sequence = 0
+		instance.sequence = prev_sequence + 10

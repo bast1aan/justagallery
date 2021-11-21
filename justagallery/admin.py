@@ -89,9 +89,9 @@ class ThumbnailFormatAdmin(admin.ModelAdmin):
 class CategoryAdmin(_OwnerMixin, admin.ModelAdmin):
 	model = models.Category
 	fields = ['parent', 'title', 'description', 'slug', 'default_thumbnail_format', 'display_formats', 'owner',
-		'default_image', 'hidden', 'private', 'images']
+		'default_image', 'hidden', 'private', 'sequence', 'images']
 	list_display = ('title', 'parent', 'slug', 'created_at', 'updated_at')
-	ordering = ('-parent', '-created_at', )
+	ordering = ('-parent', 'sequence', )
 	list_filter = ('parent',)
 	search_fields = ('title',)
 	form = CategoryForm
@@ -122,9 +122,9 @@ class CategoryAdmin(_OwnerMixin, admin.ModelAdmin):
 
 class ImageAdmin(_OwnerMixin, admin.ModelAdmin):
 	model = models.Image
-	fields = ['category', 'title', 'description', 'file', 'display_formats', 'owner']
+	fields = ['category', 'title', 'description', 'file', 'display_formats', 'owner', 'sequence']
 	list_display = ('title', 'category', 'created_at', 'updated_at')
-	ordering = ('-category', '-created_at', )
+	ordering = ('-category', 'sequence', )
 	list_filter = ('category',)
 	search_fields = ('title',)
 
