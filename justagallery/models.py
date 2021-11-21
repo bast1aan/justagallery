@@ -98,11 +98,13 @@ class Image(models.Model, entities.Image):
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
-		self.width, self.height = get_size(self.file.file.file.name)
-		# upload file now, to get the definitive unique file name, necessary for the slug
-		self._meta.get_field('file').pre_save(self, None)
-		self.slug = os.path.basename(self.file.path)
-		if not self.id: # on creation
+		if not self.file._committed:  # new file uploaded
+			# first retrieve width and height from temporary file
+			self.width, self.height = get_size(self.file.file.file.name)
+			# upload file now, to get the definitive unique file name, necessary for the slug
+			self._meta.get_field('file').pre_save(self, None)
+			self.slug = os.path.basename(self.file.path)
+		if not self.id: # on creation of record
 			if not self.title:
 				# derive title from slug (filename)
 				self.title, _ = os.path.splitext(self.slug)
