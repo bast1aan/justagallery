@@ -8,6 +8,7 @@ from django.db import models
 from django.db.models import Q
 
 from .domain import entities
+from .domain.image import get_size
 
 T = TypeVar('T', bound=models.Model)
 
@@ -92,9 +93,12 @@ class Image(models.Model, entities.Image):
 	owner = models.ForeignKey(User, on_delete=models.RESTRICT, blank=True, null=True)
 	views = models.IntegerField(default=0)
 	sequence = models.IntegerField(default=0)
+	width = models.IntegerField(default=0)
+	height = models.IntegerField(default=0)
 
 	def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
 		self.updated_at = datetime.now()
+		self.width, self.height = get_size(self.file.file.file.name)
 		# upload file now, to get the definitive unique file name, necessary for the slug
 		self._meta.get_field('file').pre_save(self, None)
 		self.slug = os.path.basename(self.file.path)
